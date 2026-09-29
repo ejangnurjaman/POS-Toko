@@ -1,0 +1,247 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a73e8"><title>POS Toko</title>
+<!-- Untuk offline penuh, unduh library ini ke public/vendor/ dan ganti src -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="js/printer.js"></script><script src="js/export.js"></script>
+<style>
+:root{--bg:#f4f6fb;--sf:#fff;--tx:#1b1f2a;--mu:#6b7280;--pr:#1a73e8;--onpr:#fff;--pc:#e8f0fe;--ok:#188038;--er:#d93025;--ln:#e5e7eb;--sh:0 1px 3px rgba(0,0,0,.14)}
+html.dark{--bg:#0f1115;--sf:#1a1d24;--tx:#e8eaed;--mu:#9aa0a6;--pr:#8ab4f8;--onpr:#0f1115;--pc:#2b3a55;--ok:#81c995;--er:#f28b82;--ln:#2d3139}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{font:15px system-ui,Roboto,sans-serif;background:var(--bg);color:var(--tx);overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+input,select,button{font:inherit;color:inherit}input,select{user-select:text;-webkit-user-select:text}
+#app{height:100%;display:flex;flex-direction:column;max-width:720px;margin:0 auto;position:relative}
+.bar{background:var(--sf);padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;display:flex;align-items:center;gap:8px;box-shadow:var(--sh);z-index:5}
+.bar h1{flex:1;font-size:20px;margin:0}
+.main{flex:1;overflow-y:auto;padding:12px}
+.nav{display:flex;background:var(--sf);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav button{flex:1;background:none;border:0;padding:8px 0 10px;color:var(--mu);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.nav .ic{width:44px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:.2s}
+.nav .on{color:var(--tx);font-weight:600}.nav .on .ic{background:var(--pr);color:var(--onpr)}
+.card{background:var(--sf);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.tile{display:flex;align-items:center;gap:12px;background:var(--sf);border-radius:14px;padding:12px;margin-bottom:8px;box-shadow:var(--sh);transition:transform .1s}
+.tile:active{transform:scale(.98);background:var(--pc)}
+.grow{flex:1;min-width:0}.mu{color:var(--mu);font-size:13px}.b{font-weight:600}.er{color:var(--er)}
+.btn{border:0;border-radius:24px;padding:12px 20px;font-weight:600;background:var(--pc);color:var(--pr)}
+.btn.p{background:var(--pr);color:var(--onpr)}.btn.ok{background:var(--ok);color:var(--onpr)}.btn.er{background:transparent}.btn.danger{background:var(--er);color:var(--onpr)}.btn.w{width:100%}
+.btn:active{opacity:.8;transform:scale(.97)}
+.in{width:100%;border:1.5px solid var(--ln);background:var(--sf);border-radius:12px;padding:12px 14px;outline:none;margin-bottom:8px}
+.in:focus{border-color:var(--pr)}
+.search{position:sticky;top:-12px;margin:-12px -12px 8px;padding:12px;background:var(--bg);z-index:2}
+.search .in{border-radius:28px;margin:0;box-shadow:var(--sh)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+.chip{flex:none;border:1px solid var(--ln);background:var(--sf);border-radius:16px;padding:6px 14px}
+.chip.on{background:var(--pc);border-color:var(--pr);color:var(--pr)}
+.fab{position:absolute;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:18px;border:0;background:var(--pr);color:var(--onpr);font-size:28px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:4}
+.cartbar{position:absolute;left:12px;right:84px;bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--pr);color:var(--onpr);border-radius:16px;height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:4;border:0;font-weight:600}
+.badge{background:var(--pr);color:var(--onpr);border-radius:10px;padding:2px 8px;font-size:12px;font-weight:700}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--sf);width:100%;max-width:720px;max-height:90%;overflow-y:auto;border-radius:24px 24px 0 0;padding:8px 16px calc(16px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(100%)}}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--ln);margin:6px auto 12px}
+.row{display:flex;align-items:center;gap:8px}
+.stepper button{width:34px;height:34px;border-radius:50%;border:0;background:var(--pc);color:var(--pr);font-size:18px}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#323232;color:#fff;padding:10px 18px;border-radius:24px;z-index:20;max-width:85%;text-align:center}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.big{font-size:22px;font-weight:700}
+.seg{display:flex;background:var(--pc);border-radius:20px;padding:3px;margin-bottom:10px}
+.seg button{flex:1;border:0;background:none;border-radius:17px;padding:8px 0;color:var(--mu)}
+.seg .on{background:var(--sf);color:var(--tx);font-weight:600;box-shadow:var(--sh)}
+label.mu{display:block;margin:2px 0 2px 4px}
+.net{font-size:12px;font-weight:600;padding:5px 10px;border-radius:12px;background:var(--pc);white-space:nowrap}.net.ok{color:var(--ok)}.net.er{color:var(--er)}.net.pr{color:var(--pr)}
+.asset-icon{display:inline-block;width:1em;height:1em;flex:0 0 auto;vertical-align:-.12em;background-color:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+.nav .ic .asset-icon{width:20px;height:20px;vertical-align:0}
+.brand-icon{display:block;width:48px;height:48px;margin:0 auto 4px;color:var(--pr)}
+.search-field{display:flex;align-items:center;gap:10px;background:var(--sf);border-radius:28px;padding:0 14px;box-shadow:var(--sh)}
+.search-field:focus-within{outline:1.5px solid var(--pr)}
+.search-field .asset-icon{width:16px;height:16px;color:var(--mu)}
+.search-field .in{flex:1;min-width:0;margin:0;padding-left:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+#backupFile{display:block;width:100%;min-height:54px;margin:8px 0 14px;padding:7px;border:1px dashed var(--ln);border-radius:12px;background:var(--bg);color:var(--mu);font-size:13px;cursor:pointer}
+#backupFile::file-selector-button{margin-right:12px;padding:9px 12px;border:0;border-radius:8px;background:var(--pc);color:var(--pr);font:600 13px system-ui,sans-serif;cursor:pointer;transition:background .15s}
+#backupFile::file-selector-button:hover{background:var(--ln)}
+#backupFile:focus-visible{outline:2px solid var(--pr);outline-offset:2px}
+</style></head><body><div id="app"></div>
+<script>
+if((localStorage.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark')document.documentElement.classList.add('dark');
+const ico=(name,cls='')=>`<span class="asset-icon ${cls}" style="--icon:url('svg/${name}.svg')" aria-hidden="true"></span>`;
+const APP_VERSION='1.0.0';
+const themeIcon=()=>ico(document.documentElement.classList.contains('dark')?'cloud-sun':'cloud-moon');
+function toggleTheme(){const d=document.documentElement.classList.toggle('dark');localStorage.theme=d?'dark':'light';document.querySelectorAll('.thm').forEach(b=>b.innerHTML=themeIcon());}
+const $=s=>document.querySelector(s),rp=n=>'Rp'+Number(n||0).toLocaleString('id-ID');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ld=(n=0)=>{const d=new Date(Date.now()-n*864e5);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const S={server:localStorage.server||location.origin,token:localStorage.token,user:JSON.parse(localStorage.user||'null'),tab:'kasir',products:[],cart:[],q:'',cat:'',disc:0,cash:0,shop:{name:'Toko Serba Ada',address:'',footer:'',width:32,method:'bluetooth',auto:false,...JSON.parse(localStorage.shop||'{}')}};
+async function api(p,o={}){const{timeoutMs=6000,...opts}=o;const r=await fetch(S.server+'/api'+p,{...opts,headers:{'Content-Type':'application/json',Authorization:'Bearer '+S.token},body:o.body&&JSON.stringify(o.body),signal:window.AbortSignal&&AbortSignal.timeout?AbortSignal.timeout(timeoutMs):undefined}).catch(()=>{throw new Error('Tidak dapat terhubung ke server')});
+ const t=await r.text();let j;try{j=JSON.parse(t)}catch{throw new Error('Server membalas bukan JSON (HTTP '+r.status+'). Pastikan server.js terbaru dan server sudah di-restart')}if(!r.ok){if(r.status===401&&S.token)logout();throw new Error(j.error||'Error');}return j;}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),2200);}
+function sheet(h){closeSheet();const s=document.createElement('div');s.className='scrim';s.id='sc';s.innerHTML=`<div class="sheet"><div class="grab"></div>${h}</div>`;s.onclick=e=>{if(e.target===s)closeSheet()};document.body.append(s);}
+const closeSheet=()=>{const s=$('#sc');s&&s.remove();};
+const logout=()=>{localStorage.removeItem('token');localStorage.removeItem('user');S.token=null;S.user=null;closeSheet();render();};
+const go=t=>{S.tab=t;S.q='';S.cat='';render();};
+// ---------- OFFLINE QUEUE ----------
+const qReady=import('./js/offlineQueue.js').catch(e=>{console.error('offlineQueue gagal dimuat:',e);return null;});
+qReady.then(Q=>{if(!Q)return toast('Mode offline belum aktif (cek public/vendor/dexie.js)');
+ Q.configure({getBaseUrl:()=>S.server,getToken:()=>S.token,getUser:()=>S.user});Q.onStatusChange(renderNet);Q.start();});
+let NET={status:'ONLINE',pending:0,message:''};
+function renderNet(s){if(s)NET=s;const e=$('#net');if(!e)return;
+ const m={ONLINE:['ok','Online'],OFFLINE:['er','Offline'+(NET.pending?' • '+NET.pending+' pending':'')],SYNCING:['pr','Sinkron...'],AUTH_REQUIRED:['er',ico('exclamation-triangle-fill')+' Login ulang']}[NET.status]||['ok',''];e.className='net '+m[0];e.innerHTML=m[1];}
+async function netTap(){toast(NET.message||NET.status);const Q=await qReady;Q&&Q.checkAndSync();}
+function askLogout(){if(NET.pending&&!confirm(NET.pending+' transaksi offline belum tersinkron. Data tetap tersimpan di HP ini dan dikirim setelah login lagi. Tetap keluar?'))return;logout();}
+function render(){const a=$('#app');
+ if(!S.token)return a.innerHTML=`<div class="main" style="display:flex"><div class="card" style="width:100%;max-width:380px;margin:auto;padding:24px"><div style="text-align:right"><button class="btn thm" style="padding:6px 12px" onclick="toggleTheme()">${themeIcon()}</button></div>
+ ${ico('kasir','brand-icon')}<h1 style="text-align:center;margin:4px 0 16px">POS Toko</h1>
+ <input id="svr" class="in" placeholder="Alamat server (cth http://192.168.43.1:3000)" value="${esc(S.server)}"><input id="un" class="in" placeholder="Username" autocapitalize="none"><input id="pw" type="password" class="in" placeholder="Password" onkeydown="if(event.key=='Enter')login()">
+ <button class="btn p w" onclick="login()">Masuk</button><p id="err" class="er"></p></div></div>`;
+ const adm=S.user.role==='admin',tabs=[['kasir','kasir','Kasir'],['riw','clock-history','Riwayat'],...(adm?[['dash','report','Ringkasan'],['stok','box-seam','Barang'],['lap','clipboard-data','Laporan']]:[]),['srv','gear','Pengaturan']];
+ const T={kasir:'Kasir',riw:'Riwayat',dash:'Ringkasan',stok:'Barang',lap:'Laporan',srv:'Pengaturan'};
+ a.innerHTML=`<div class="bar"><h1>${T[S.tab]}</h1><span id="net" class="net" onclick="netTap()"></span><button class="btn thm" style="padding:8px 12px" onclick="toggleTheme()">${themeIcon()}</button><button class="btn danger" style="padding:8px 14px" onclick="askLogout()">Keluar</button></div>
+ <div class="main" id="view"></div><div class="nav">${tabs.map(([k,i,l])=>`<button class="${S.tab==k?'on':''}" onclick="go('${k}')"><span class="ic">${ico(i)}</span>${l}</button>`).join('')}</div>`;
+ ({kasir,riw,dash,stok,lap,srv})[S.tab]();renderNet();}
+async function login(){try{S.server=$('#svr').value.trim().replace(/\/$/,'');localStorage.server=S.server;
+ const r=await api('/auth/login',{method:'POST',body:{username:$('#un').value,password:$('#pw').value}});
+ S.token=r.token;S.user=r.user;localStorage.token=r.token;localStorage.user=JSON.stringify(r.user);S.tab='kasir';await syncSettings(true);render();qReady.then(Q=>Q&&Q.checkAndSync());}catch(e){$('#err').textContent=e.message}}
+// ---------- KASIR ----------
+const sub=()=>S.cart.reduce((s,i)=>s+i.price*i.qty,0),total=()=>Math.max(0,sub()-S.disc),cnt=()=>S.cart.reduce((s,i)=>s+i.qty,0);
+async function kasir(){const Q=await qReady;
+ try{const l=await api('/products');S.products=Q?await Q.cacheProducts(l):l}
+ catch(e){S.products=Q?await Q.getCachedProducts():[];toast(S.products.length?'Mode offline: memakai data barang tersimpan':e.message)}
+ $('#view').innerHTML=`<div class="search"><div class="search-field">${ico('search')}<input id="sq" class="in" placeholder="Cari nama / scan barcode" value="${esc(S.q)}" oninput="S.q=this.value;plist()" onkeydown="if(event.key=='Enter')scan(this)"></div></div><div class="chips" id="chips"></div><div id="pl"></div><div id="cb"></div><button class="fab" onclick="manualSheet()">＋</button>`;plist();cbar();}
+function plist(){const q=S.q.toLowerCase();S.cats=['',...new Set(S.products.map(p=>p.category).filter(Boolean))];
+ $('#chips').innerHTML=S.cats.length>1?S.cats.map((c,i)=>`<button class="chip ${S.cat==c?'on':''}" onclick="S.cat=S.cats[${i}];plist()">${esc(c)||'Semua'}</button>`).join(''):'';
+ const l=S.products.filter(p=>(!S.cat||p.category==S.cat)&&(p.name.toLowerCase().includes(q)||(p.barcode||'').includes(q)));
+ $('#pl').innerHTML=l.map(p=>{const c=S.cart.find(x=>x.product_id==p.id);return `<div class="tile" onclick="add(${p.id})" style="${p.stock<=0?'opacity:.45':''}"><div class="grow"><div class="b">${esc(p.name)}</div><div class="mu">Stok ${p.stock}${p.category?' • '+esc(p.category):''}</div></div>${c?`<span class="badge">${c.qty}</span>`:''}<div class="b" style="color:var(--pr)">${rp(p.selling_price)}</div></div>`}).join('')||'<p class="mu" style="text-align:center;margin-top:40px">Barang tidak ditemukan</p>';
+ $('#pl').insertAdjacentHTML('beforeend','<div style="height:90px"></div>');}
+function scan(el){const p=S.products.find(x=>x.barcode===el.value.trim());if(p){add(p.id);el.value='';S.q='';plist();}else toast('Barcode tidak ditemukan');}
+function add(id){const p=S.products.find(x=>x.id==id);if(p.stock<=0)return toast('Stok habis');const c=S.cart.find(x=>x.product_id==id);
+ if(c){if(c.qty>=p.stock)return toast('Melebihi stok');c.qty++}else S.cart.push({product_id:id,name:p.name,price:p.selling_price,qty:1});
+ plist();cbar();navigator.vibrate&&navigator.vibrate(15);}
+function cbar(){const e=$('#cb');if(e)e.innerHTML=S.cart.length?`<button class="cartbar" onclick="cartSheet()"><span>${ico('kasir')} ${cnt()} item</span><span>${rp(total())} ▲</span></button>`:'';}
+function qty(n,d){const i=S.cart[n],p=S.products.find(x=>x.id==i.product_id);if(d>0&&p&&i.qty>=p.stock)return toast('Melebihi stok');i.qty+=d;if(i.qty<1)S.cart.splice(n,1);plist();cbar();cartSheet();}
+function cartSheet(){if(!S.cart.length)return closeSheet();
+ sheet(`<h2 style="margin:0 0 8px">Keranjang</h2>${S.cart.map((i,n)=>`<div class="row" style="padding:8px 0;border-bottom:1px solid var(--ln)"><div class="grow"><div class="b">${esc(i.name)}</div><div class="mu">${rp(i.price)}</div></div><div class="row stepper"><button onclick="qty(${n},-1)">−</button><b>${i.qty}</b><button onclick="qty(${n},1)">＋</button></div><b style="width:84px;text-align:right">${rp(i.price*i.qty)}</b></div>`).join('')}
+ <div class="row" style="margin-top:10px"><span class="grow">Diskon (Rp)</span><input id="ds" type="number" inputmode="numeric" class="in" style="width:140px;margin:0" value="${S.disc||''}" oninput="S.disc=+this.value||0;upd()"></div>
+ <div class="row big" style="margin:10px 0"><span class="grow">Total</span><span id="tt"></span></div>
+ <input id="cs" type="number" inputmode="numeric" class="in" placeholder="Uang diterima" value="${S.cash||''}" oninput="upd()"><div class="chips" id="qk"></div>
+ <div class="row b" style="margin-bottom:12px"><span class="grow">Kembalian</span><span id="kb"></span></div>
+ <button class="btn ok w" onclick="pay()">Bayar & Cetak Struk</button>`);upd();}
+function upd(){const t=total(),c=+($('#cs').value||0);S.cash=c;$('#tt').textContent=rp(t);$('#kb').textContent=rp(Math.max(0,c-t));
+ const o=[...new Set([t,...[5000,10000,20000,50000,100000].filter(v=>v>=t)])].slice(0,4);
+ $('#qk').innerHTML=o.map(v=>`<button class="chip" onclick="$('#cs').value=${v};upd()">${v==t?'Uang pas':rp(v)}</button>`).join('');cbar();}
+async function pay(){if(S.paying)return;S.paying=true;
+ try{const Q=await qReady,payload={items:S.cart.map(i=>({product_id:i.product_id||null,name:i.name,price:i.price,qty:i.qty})),discount:S.disc,cash_received:+$('#cs').value,payment_method:'cash'};
+ let t,mode='online';
+ if(Q){const r=await Q.processTransaction(payload);t=r.receipt;mode=r.mode}else t=await api('/transactions',{method:'POST',body:payload});
+ S.last=t;S.cart=[];S.disc=0;S.cash=0;if(S.shop.auto)doPrint(t,S.shop.method);
+ sheet(`<div style="text-align:center;padding:12px 0"><div class="mu">Kembalian</div><div class="big" style="font-size:34px">${rp(t.change)}</div><div class="mu">${esc(t.invoice_number)}</div>${mode=='offline'?'<div class="net er" style="display:inline-block;margin-top:8px">Tersimpan offline — dikirim otomatis saat tersambung</div>':''}</div>
+ <div class="g2"><button class="btn p" onclick="doPrint(S.last,S.shop.method)">${ico('printer')} Cetak (${mName(S.shop.method)})</button><button class="btn" onclick="doPrint(S.last,otherM())">Via ${mName(otherM())}</button></div><button class="btn w" style="margin-top:8px" onclick="closeSheet();kasir()">Selesai</button>`);
+ }catch(e){toast(e.message)}finally{S.paying=false}}
+const doPrint=(t,m,copy)=>{const b=Printer.build(t,S.shop,S.shop.width,copy);return m==='rawbt'?Printer.printRawBT(b):Printer.printBT(b).catch(e=>toast('Gagal cetak: '+e.message));};
+const otherM=()=>S.shop.method==='rawbt'?'bluetooth':'rawbt',mName=m=>m==='rawbt'?'RawBT':'Bluetooth';
+
+function manualSheet(){sheet(`<h2 style="margin:0 0 8px">Barang Manual</h2><input id="mn" class="in" placeholder="Nama barang"><input id="mp" type="number" inputmode="numeric" class="in" placeholder="Harga jual"><button class="btn p w" onclick="manual()">Tambah ke Keranjang</button>`);}
+function manual(){const n=$('#mn').value.trim(),p=$('#mp').value;if(!n||p==='')return toast('Isi nama & harga');S.cart.push({name:n,price:+p,qty:1});closeSheet();cbar();}
+// ---------- ADMIN ----------
+async function dash(){try{const g=t=>api('/reports/summary?type='+t),[d,w,m]=await Promise.all([g('daily'),g('weekly'),g('monthly')]);
+ $('#view').innerHTML=`<div class="card" style="background:var(--pr);color:var(--onpr)"><div style="opacity:.85">Penjualan hari ini</div><div class="big" style="font-size:30px">${rp(d.revenue)}</div><div>Profit ${rp(d.profit)} • ${d.trx} transaksi</div></div>
+ <div class="g2">${[['7 hari',w],['Bulan ini',m]].map(([l,x])=>`<div class="card"><div class="mu">${l}</div><div class="big">${rp(x.revenue)}</div><div style="color:var(--ok)">Profit ${rp(x.profit)}</div></div>`).join('')}</div>
+ <div class="card"><div class="b" style="margin-bottom:6px">${ico('exclamation-triangle-fill')} Stok menipis</div>${d.low.map(x=>`<div class="row"><span class="grow">${esc(x.name)}</span><span class="er b">${x.stock}</span></div>`).join('')||'<span class="mu">Semua stok aman</span>'}</div>`;}catch(e){toast(e.message)}}
+async function stok(){try{S.products=await api('/products')}catch(e){return toast(e.message)}
+ $('#view').innerHTML=`<div class="search"><div class="search-field">${ico('search')}<input class="in" placeholder="Cari barang" oninput="S.q=this.value;slist()"></div></div><div id="sl"></div><button class="fab" onclick="pform()">＋</button>`;slist();}
+function slist(){const q=S.q.toLowerCase();$('#sl').innerHTML=S.products.filter(p=>p.name.toLowerCase().includes(q)||(p.barcode||'').includes(q)).map(p=>`<div class="tile" onclick="pform(${p.id})"><div class="grow"><div class="b">${esc(p.name)}</div><div class="mu">Modal ${rp(p.cost_price)} • Untung ${rp(p.selling_price-p.cost_price)}</div></div><div style="text-align:right"><div class="b">${rp(p.selling_price)}</div><div class="${p.stock<=p.min_stock?'er b':'mu'}">Stok ${p.stock}</div></div></div>`).join('')+'<div style="height:90px"></div>';}
+function pform(id){const p=id?S.products.find(x=>x.id==id):{};const f=(k,l,t='text')=>`<label class="mu">${l}</label><input id="f_${k}" type="${t}" ${t=='number'?'inputmode="numeric"':''} class="in" value="${esc(p[k]??'')}">`;
+ sheet(`<h2 style="margin:0 0 8px">${id?'Edit':'Tambah'} Barang</h2>${f('name','Nama')}${f('barcode','Barcode / SKU')}${f('category','Kategori')}<div class="g2"><div>${f('cost_price','Harga modal','number')}</div><div>${f('selling_price','Harga jual','number')}</div><div>${f('stock','Stok','number')}</div><div>${f('min_stock','Min. stok','number')}</div></div>
+ <button class="btn p w" onclick="saveP(${id||0})">Simpan</button>${id?`<button class="btn er w" style="margin-top:6px" onclick="delP(${id})">Hapus barang</button>`:''}`);}
+async function saveP(id){const b={};for(const k of ['name','barcode','category','cost_price','selling_price','stock','min_stock'])b[k]=$('#f_'+k).value;
+ if(!b.name.trim())return toast('Nama wajib diisi');try{await api(id?'/products/'+id:'/products',{method:id?'PUT':'POST',body:b});closeSheet();toast('Tersimpan');stok();}catch(e){toast(e.message)}}
+async function delP(id){if(!confirm('Hapus barang ini?'))return;try{await api('/products/'+id,{method:'DELETE'});closeSheet();stok();}catch(e){toast(e.message)}}
+let REP=null,RT='daily';
+async function lap(){$('#view').innerHTML=`<div class="seg">${[['daily','Hari ini'],['weekly','7 Hari'],['monthly','Bulan'],['custom','Pilih']].map(([k,l])=>`<button data-t="${k}" class="${RT==k?'on':''}">${l}</button>`).join('')}</div>
+ <div class="row" style="display:${RT=='custom'?'flex':'none'};margin-bottom:8px"><input id="fr" type="date" class="in" style="margin:0" value="${ld()}"><input id="to" type="date" class="in" style="margin:0" value="${ld()}"><button class="btn p" id="b_go">OK</button></div>
+ <div id="rep" class="card"></div><div class="g2"><button class="btn" id="b_pdf">${ico('filetype-pdf')} PDF</button><button class="btn" id="b_jpg">${ico('filetype-jpg')} JPG</button></div>`;
+ document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{RT=b.dataset.t;lap()});
+ $('#b_go').onclick=()=>loadRep();
+ $('#b_pdf').onclick=()=>{if(!REP)return toast('Tampilkan laporan dulu');
+  if(!(window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API.autoTable))return toast('Library PDF belum termuat (butuh internet/file lokal)');
+  try{Exporter.pdf(REP,S.shop.name)}catch(e){toast('Gagal PDF: '+e.message)}};
+ $('#b_jpg').onclick=async()=>{if(!REP)return toast('Tampilkan laporan dulu');if(!window.html2canvas)return toast('Library gambar belum termuat (butuh internet/file lokal)');
+  try{await Exporter.image($('#rep'),'laporan_'+REP.from+'_'+REP.to,'jpg')}catch(e){toast('Gagal JPG: '+e.message)}};
+ loadRep(RT=='custom'?null:RT);}
+async function loadRep(t){const box=$('#rep');box.textContent='Memuat...';
+ try{if(!t&&$('#fr').value>$('#to').value)throw new Error('Tanggal awal lebih besar dari tanggal akhir');
+  REP=await api('/reports/export?'+(t?'type='+t:`from=${$('#fr').value}&to=${$('#to').value}`));
+  box.innerHTML=`<div class="b">${esc(S.shop.name)}</div><div class="mu">${REP.from} s/d ${REP.to}</div><div class="g2" style="margin:10px 0">${[['Omset',rp(REP.revenue)],['Modal',rp(REP.cost)],['Keuntungan',rp(REP.profit)],['Transaksi',REP.trx]].map(([l,v])=>`<div><div class="mu">${l}</div><div class="b" style="font-size:17px">${v}</div></div>`).join('')}</div>
+  <div class="b" style="margin-bottom:4px">Terlaris</div>${REP.top.map(x=>`<div class="row" style="padding:3px 0"><span class="grow">${esc(x.name)} ×${x.qty}</span><span>${rp(x.revenue)}</span></div>`).join('')||'<span class="mu">Belum ada penjualan</span>'}`;
+ }catch(e){box.innerHTML='<span class="er">Gagal memuat laporan: '+esc(e.message)+'</span>';}}
+// ---------- RIWAYAT & CETAK ULANG ----------
+async function riw(){$('#view').innerHTML=`<div class="search"><div class="search-field">${ico('search')}<input class="in" placeholder="Cari nomor invoice" oninput="riwLoad(this.value)"></div></div><div id="rl"></div>`;riwLoad('');}
+let riwT;function riwLoad(q){clearTimeout(riwT);riwT=setTimeout(async()=>{try{const l=await api('/transactions?q='+encodeURIComponent(q)),el=$('#rl');if(!el)return;
+ el.innerHTML=l.map(t=>`<div class="tile" onclick="riwDetail(${t.id})"><div class="grow"><div class="b">${esc(t.invoice_number)}</div><div class="mu">${esc(t.created_at)} • ${t.items} jenis • ${esc(t.cashier)}</div></div><div class="b">${rp(t.total_amount)}</div></div>`).join('')||'<p class="mu" style="text-align:center;margin-top:40px">Belum ada transaksi</p>';}catch(e){toast(e.message)}},q?250:0);}
+async function riwDetail(id){try{const t=await api('/transactions/'+id);S.rp=t;
+ sheet(`<h2 style="margin:0">${esc(t.invoice_number)}</h2><div class="mu" style="margin-bottom:8px">${esc(t.created_at)} • Kasir ${esc(t.cashier)}</div>
+ ${t.items.map(i=>`<div class="row" style="padding:5px 0"><span class="grow">${esc(i.product_name)}<div class="mu">${i.qty} × ${rp(i.selling_price)}</div></span><b>${rp(i.subtotal)}</b></div>`).join('')}
+ <div style="border-top:1px solid var(--ln);margin:8px 0;padding-top:8px">${t.discount?`<div class="row"><span class="grow">Diskon</span><span>-${rp(t.discount)}</span></div>`:''}<div class="row b"><span class="grow">Total</span><span>${rp(t.total)}</span></div><div class="row"><span class="grow">Bayar</span><span>${rp(t.cash_received)}</span></div><div class="row"><span class="grow">Kembali</span><span>${rp(t.change)}</span></div></div>
+ <div class="g2" style="margin-top:12px"><button class="btn p" onclick="doPrint(S.rp,S.shop.method,true)">${ico('printer')} Cetak ulang (${mName(S.shop.method)})</button><button class="btn" onclick="doPrint(S.rp,otherM(),true)">Via ${mName(otherM())}</button></div>`);}catch(e){toast(e.message)}}
+// ---------- PENGATURAN ----------
+async function srv(){let info=null;if(S.user.role==='admin')try{info=await api('/server-info')}catch(e){}
+ const sh=S.shop;
+ $('#view').innerHTML=`<div class="card"><div class="mu">Terhubung ke</div><div class="b">${esc(S.server)}</div></div>
+ ${info?`<div class="card" style="text-align:center"><div class="b">Scan / ketik alamat ini di HP Karyawan</div><div id="qr" style="margin:12px"></div>${info.urls.map(u=>`<div class="big" style="font-size:18px">${u}</div>`).join('')||'<div class="mu">Jaringan Wi-Fi tidak terdeteksi</div>'}</div>`:''}
+ <div class="card"><div class="b">Printer & Struk</div><div class="mu" style="margin-bottom:8px">Perubahan berlaku untuk semua perangkat (Admin & Kasir)</div>
+ <label class="mu">Nama toko</label><input id="sn" class="in" value="${esc(sh.name)}">
+ <label class="mu">Alamat</label><input id="sa" class="in" value="${esc(sh.address)}">
+ <label class="mu">Ucapan di bawah struk</label><input id="sf" class="in" value="${esc(sh.footer)}">
+ <label class="mu">Ukuran kertas</label><select id="sw" class="in"><option value="32">58mm</option><option value="48" ${sh.width==48?'selected':''}>80mm</option></select>
+ <label class="mu">Metode cetak</label><select id="sm" class="in"><option value="bluetooth">Bluetooth langsung</option><option value="rawbt" ${sh.method=='rawbt'?'selected':''}>Aplikasi RawBT</option></select>
+ <label class="row" style="margin:4px 0 12px"><input id="sx" type="checkbox" ${sh.auto?'checked':''}> Cetak otomatis setelah bayar</label>
+ <div class="g2"><button class="btn p" onclick="saveShop()">Simpan</button><button class="btn" onclick="Printer.connect().then(n=>toast('Terhubung: '+n)).catch(e=>toast(e.message))">${ico('printer')} Sambung printer</button></div>
+ <div class="mu" style="margin-top:8px">Sambungan Bluetooth ke printer diatur per perangkat.</div></div>
+ ${S.user.role==='admin'?`<div class="card"><div class="b">Database</div><div class="mu" style="margin:4px 0 10px">Backup mencakup barang, transaksi, log stok, pengaturan, serta data offline perangkat ini. Akun pengguna tidak berubah.</div>
+ <div class="g2"><button class="btn p" onclick="exportBackup()">${ico('download')} Ekspor database</button><button class="btn" onclick="$('#backupFile').click()">${ico('upload')} Impor backup</button></div>
+ <label class="mu" for="backupFile">File backup (.json)</label><input id="backupFile" type="file" accept=".json,application/json" onchange="importBackup(this)">
+ <label class="mu">Data yang akan dihapus</label><select id="clearScope" class="in"><option value="all">Semua data operasional</option><option value="products">Barang & log stok</option><option value="transactions">Transaksi</option><option value="settings">Pengaturan toko</option></select>
+ <button class="btn er w" style="color:var(--er);border:1px solid var(--er)" onclick="clearDatabase()">Hapus data terpilih</button><div class="mu" style="margin-top:6px">Hapus semua juga mengosongkan antrean offline dan cache barang perangkat ini. Akun admin/kasir tetap tersimpan.</div></div>`:''}
+ ${S.user.role==='admin'?'<div id="ul"></div>':''}
+ <button class="tile" style="width:100%;border:0;text-align:left;color:var(--tx)" onclick="aboutSheet()"><span class="grow"><span class="b">Tentang aplikasi</span><span class="mu" style="display:block">Versi dan informasi aplikasi</span></span><span aria-hidden="true" style="font-size:22px;color:var(--mu)">›</span></button>`;
+ if(info&&info.urls[0]&&window.qrcode){const q=qrcode(0,'M');q.addData(info.urls[0]);q.make();$('#qr').innerHTML=q.createImgTag(6);}
+ if(S.user.role==='admin')usersLoad();}
+async function aboutSheet(){const Q=await qReady;sheet(`<h2 style="margin:0 0 4px">Tentang aplikasi</h2><div class="big" style="margin-bottom:14px">POS Toko</div>
+ <div class="row" style="padding:9px 0;border-bottom:1px solid var(--ln)"><span class="grow mu">Versi</span><span class="b">${APP_VERSION}</span></div>
+ <div class="row" style="padding:9px 0;border-bottom:1px solid var(--ln)"><span class="grow mu">Platform</span><span>Web app</span></div>
+ <div class="row" style="padding:9px 0;border-bottom:1px solid var(--ln)"><span class="grow mu">Database</span><span>SQLite</span></div>
+ <div class="row" style="padding:9px 0;border-bottom:1px solid var(--ln)"><span class="grow mu">Mode transaksi offline</span><span>${Q?'Aktif':'Tidak tersedia'}</span></div>
+ <div style="padding:9px 0"><div class="mu">Server</div><div style="overflow-wrap:anywhere">${esc(S.server)}</div></div>
+ <button class="btn w" style="margin-top:8px" onclick="closeSheet()">Tutup</button>`);}
+async function saveShop(){try{S.shop=await api('/settings',{method:'PUT',body:{name:$('#sn').value,address:$('#sa').value,footer:$('#sf').value,width:+$('#sw').value,method:$('#sm').value,auto:$('#sx').checked}});localStorage.shop=JSON.stringify(S.shop);toast('Tersimpan & disinkronkan');}catch(e){toast(e.message)}}
+async function exportBackup(){try{const Q=await qReady,backup=await api('/backup');backup.offline=Q?{transactions:await Q.getQueue(),products:await Q.getCachedProducts()}:{transactions:[],products:[]};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='pos-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);toast('Backup berhasil diunduh');}catch(e){toast('Ekspor gagal: '+e.message)}}
+async function importBackup(input){const file=input.files[0];if(!file)return;input.value='';let backup;const Q=await qReady;
+ try{backup=JSON.parse(await file.text());if(backup.format!=='pos-toko-backup'||backup.version!==1||!backup.tables)throw new Error('Format atau versi backup tidak didukung');
+ if(!confirm('Impor backup akan mengganti barang, transaksi, log stok, dan pengaturan saat ini. Akun pengguna tidak berubah. Lanjutkan?'))return;
+ const Q=await qReady;Q&&Q.stop();await api('/backup/import',{method:'POST',body:{format:backup.format,version:backup.version,tables:backup.tables},timeoutMs:60000});
+ if(Q&&backup.offline){await Q.db.transaction('rw',Q.db.offline_transactions,Q.db.products_cache,async()=>{await Q.db.offline_transactions.clear();await Q.db.products_cache.clear();if(Array.isArray(backup.offline.transactions)&&backup.offline.transactions.length)await Q.db.offline_transactions.bulkPut(backup.offline.transactions);if(Array.isArray(backup.offline.products)&&backup.offline.products.length)await Q.db.products_cache.bulkPut(backup.offline.products);});}
+ S.products=[];await syncSettings(true);toast('Backup berhasil diimpor');srv();
+ }catch(e){toast('Impor gagal: '+e.message)}finally{Q&&Q.start();}}
+async function clearDatabase(){const scope=$('#clearScope').value,names={all:'semua data operasional dan antrean offline perangkat ini',products:'barang serta log stok',transactions:'transaksi dan antrean transaksi offline perangkat ini',settings:'pengaturan toko'};
+ if(!confirm('Hapus '+names[scope]+'? Tindakan ini tidak dapat dibatalkan. Akun pengguna tetap tersimpan.'))return;const Q=await qReady;Q&&Q.stop();
+ try{await api('/backup/'+scope,{method:'DELETE'});if(Q){if(scope==='all'||scope==='transactions')await Q.db.offline_transactions.clear();if(scope==='all'||scope==='products')await Q.db.products_cache.clear();}
+ if(scope==='all'||scope==='products')S.products=[];await syncSettings(true);toast('Data berhasil dihapus');srv();}catch(e){toast('Gagal menghapus: '+e.message)}finally{Q&&Q.start();}}
+async function syncSettings(first){try{const n=await api('/settings');if(JSON.stringify(n)!==JSON.stringify(S.shop)){S.shop=n;localStorage.shop=JSON.stringify(n);
+ if(!first){toast('Pengaturan diperbarui');if(S.tab==='srv'&&!$('#sc')&&!document.activeElement.matches('input,select'))srv();}}}catch(e){}}
+// ---------- PENGGUNA (ADMIN) ----------
+async function usersLoad(){try{S.users=await api('/users');const el=$('#ul');if(!el)return;
+ el.innerHTML=`<div class="card"><div class="row"><span class="b grow">Pengguna</span><button class="btn p" style="padding:8px 14px" onclick="uform()">＋ Tambah</button></div>${S.users.map(u=>`<div class="tile" style="box-shadow:none;background:var(--bg);margin:8px 0 0" onclick="uform(${u.id})"><div class="grow"><div class="b">${esc(u.name)}${u.id==S.user.id?' (Anda)':''}</div><div class="mu">@${esc(u.username)}</div></div><span class="badge">${u.role=='admin'?'Admin':'Kasir'}</span></div>`).join('')}</div>`;}catch(e){toast(e.message)}}
+function uform(id){const u=id?S.users.find(x=>x.id==id):{role:'karyawan'};
+ sheet(`<h2 style="margin:0 0 8px">${id?'Ubah':'Tambah'} Pengguna</h2><label class="mu">Nama</label><input id="un_" class="in" value="${esc(u.name||'')}"><label class="mu">Username</label><input id="us_" class="in" autocapitalize="none" value="${esc(u.username||'')}">
+ <label class="mu">Role</label><select id="ur_" class="in"><option value="karyawan">Karyawan (Kasir)</option><option value="admin" ${u.role=='admin'?'selected':''}>Admin</option></select>
+ <label class="mu">${id?'Password baru (kosongkan jika tidak diubah)':'Password'}</label><input id="up_" type="password" class="in" autocomplete="new-password">
+ <button class="btn p w" onclick="saveU(${id||0})">Simpan</button>${id&&id!=S.user.id?`<button class="btn er w" style="margin-top:6px" onclick="delU(${id})">Hapus pengguna</button>`:''}`);}
+async function saveU(id){const b={name:$('#un_').value,username:$('#us_').value,role:$('#ur_').value,password:$('#up_').value};
+ try{const r=await api(id?'/users/'+id:'/users',{method:id?'PUT':'POST',body:b});
+  if(r.self){S.user=r.self;localStorage.user=JSON.stringify(r.self);}
+  closeSheet();toast('Tersimpan');if(r.self&&r.self.role!=='admin')return go('kasir');usersLoad();}catch(e){toast(e.message)}}
+async function delU(id){if(!confirm('Hapus pengguna ini?'))return;try{await api('/users/'+id,{method:'DELETE'});closeSheet();toast('Dihapus');usersLoad();}catch(e){toast(e.message)}}
+render();if(S.token)syncSettings(true);setInterval(()=>{if(S.token)syncSettings()},8000);
+</script></body></html>
